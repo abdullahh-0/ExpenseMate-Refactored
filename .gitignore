@@ -1,0 +1,19 @@
+# dependencies and build output
+node_modules/
+frontend/dist/
+
+# secrets: never commit
+.env
+!.env.example
+
+# runtime files
+backend/uploads/*
+!backend/uploads/.gitkeep
+*.db
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
