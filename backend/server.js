@@ -50,7 +50,8 @@ if (require.main === module) {
     });
   });
 } else {
-  initDb();
+  // Exposed so tests can wait until the database is migrated and seeded
+  app.ready = initDb();
 }
 
 module.exports = app;
