@@ -146,3 +146,5 @@ The complete academic submission documents for this assignment are located in th
 - `Test_Cases.docx` (System & Integration Test Suite)
 - `Metrics Report.docx` (Quality & Software Metrics)
 - `Final_Report.docx` (Complete Project Lifecycle Report)
+
+> Assignment 2 refactor in progress
