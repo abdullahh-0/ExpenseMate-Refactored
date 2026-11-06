@@ -1,3 +1,15 @@
+const PAYMENT_METHODS = ['Cash', 'Debit Card', 'Credit Card', 'Bank Transfer', 'Mobile Wallet'];
+
+function validatePaymentMethod(method) {
+  if (method === undefined || method === null || method === '') {
+    return { valid: true, value: 'Cash' };
+  }
+  if (!PAYMENT_METHODS.includes(method)) {
+    return { valid: false, message: 'Payment method must be one of: ' + PAYMENT_METHODS.join(', ') + '.' };
+  }
+  return { valid: true, value: method };
+}
+
 function validateAmount(amount) {
   const num = parseFloat(amount);
   if (isNaN(num) || num <= 0) {
@@ -41,6 +53,9 @@ function validateTransactionInput(data) {
   const tp = validateTransactionType(data.type);
   if (!tp.valid) errors.push(tp.message);
 
+  const pm = validatePaymentMethod(data.payment_method);
+  if (!pm.valid) errors.push(pm.message);
+
   return {
     valid: errors.length === 0,
     errors
@@ -51,5 +66,7 @@ module.exports = {
   validateAmount,
   validateDate,
   validateTransactionType,
-  validateTransactionInput
+  validatePaymentMethod,
+  validateTransactionInput,
+  PAYMENT_METHODS
 };

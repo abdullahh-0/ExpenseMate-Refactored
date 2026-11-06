@@ -61,9 +61,9 @@ const getTransactions = async (req, res) => {
 // POST /api/transactions
 const createTransaction = async (req, res) => {
   try {
-    const { date, description, amount, type, category_id, category_name, currency } = req.body;
+    const { date, description, amount, type, category_id, category_name, currency, payment_method } = req.body;
 
-    const validation = validateTransactionInput({ date, description, amount, type });
+    const validation = validateTransactionInput({ date, description, amount, type, payment_method });
     if (!validation.valid) {
       return res.status(400).json({ success: false, message: validation.errors.join(' ') });
     }
@@ -86,11 +86,11 @@ const createTransaction = async (req, res) => {
     }
 
     const insertSql = `
-      INSERT INTO transactions (date, description, amount, type, category_id, currency)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO transactions (date, description, amount, type, category_id, currency, payment_method)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `;
-    const params = [date, description.trim(), parseFloat(amount), type, finalCategoryId, currency || 'PKR'];
+    const params = [date, description.trim(), parseFloat(amount), type, finalCategoryId, currency || 'PKR', payment_method || 'Cash'];
 
     const result = await db.query(insertSql, params);
     return res.status(201).json({
@@ -107,20 +107,20 @@ const createTransaction = async (req, res) => {
 const updateTransaction = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { date, description, amount, type, category_id, currency } = req.body;
+    const { date, description, amount, type, category_id, currency, payment_method } = req.body;
 
-    const validation = validateTransactionInput({ date, description, amount, type });
+    const validation = validateTransactionInput({ date, description, amount, type, payment_method });
     if (!validation.valid) {
       return res.status(400).json({ success: false, message: validation.errors.join(' ') });
     }
 
     const updateSql = `
       UPDATE transactions
-      SET date = $1, description = $2, amount = $3, type = $4, category_id = $5, currency = $6
-      WHERE id = $7
+      SET date = $1, description = $2, amount = $3, type = $4, category_id = $5, currency = $6, payment_method = $7
+      WHERE id = $8
       RETURNING *
     `;
-    const params = [date, description.trim(), parseFloat(amount), type, parseInt(category_id), currency || 'PKR', id];
+    const params = [date, description.trim(), parseFloat(amount), type, parseInt(category_id), currency || 'PKR', payment_method || 'Cash', id];
 
     const result = await db.query(updateSql, params);
     if (result.rows.length === 0) {
