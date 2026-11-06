@@ -11,7 +11,9 @@
     "migrate:status": "node db/migrate.js status",
     "migrate:down": "node db/migrate.js down",
     "db:fingerprint": "node db/fingerprint.js",
-    "regression:compare": "node scripts/regressionCompare.js"
+    "regression:compare": "node scripts/regressionCompare.js",
+    "test:coverage": "jest --forceExit --coverage --coverageReporters=text-summary",
+    "metrics": "node scripts/metrics.js ."
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -25,5 +27,17 @@
   "devDependencies": {
     "jest": "^29.7.0",
     "supertest": "^6.3.4"
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "controllers/**/*.js",
+      "services/**/*.js",
+      "repositories/**/*.js",
+      "db/**/*.js",
+      "utils/**/*.js",
+      "routes/**/*.js",
+      "server.js",
+      "container.js"
+    ]
   }
 }
