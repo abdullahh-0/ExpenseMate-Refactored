@@ -115,5 +115,6 @@ describe('ExpenseMate API Test Suite', () => {
     const db = require('../db/connection');
     await db.query("DELETE FROM transactions WHERE description = 'Grocery Shopping at Metro'");
     await db.query("DELETE FROM transactions WHERE description IN ('Payment method persistence check', 'Default payment method check')");
+    await db.close(); // release the connection pool so Jest can exit cleanly
   });
 });
