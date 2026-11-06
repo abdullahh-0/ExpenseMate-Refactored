@@ -26,6 +26,14 @@ describe('ExpenseMate API Test Suite', () => {
     expect(res.body.suggestedCategory).toEqual('Transport');
   });
 
+  test('POST /api/transactions/suggest-category - Should not be fooled by words that merely contain a keyword', async () => {
+    const concert = await request(app).post('/api/transactions/suggest-category').send({ description: 'Concert tickets' });
+    expect(concert.body.suggestedCategory).toEqual('Entertainment'); // "concert" contains "cert" (Education)
+
+    const revenue = await request(app).post('/api/transactions/suggest-category').send({ description: 'Business revenue' });
+    expect(revenue.body.suggestedCategory).toEqual('Business'); // "business" contains "bus" (Transport)
+  });
+
   test('POST /api/transactions - Should create a new transaction', async () => {
     const newTx = {
       amount: 1500,
@@ -115,5 +123,6 @@ describe('ExpenseMate API Test Suite', () => {
     const db = require('../db/connection');
     await db.query("DELETE FROM transactions WHERE description = 'Grocery Shopping at Metro'");
     await db.query("DELETE FROM transactions WHERE description IN ('Payment method persistence check', 'Default payment method check')");
+    await db.close(); // release the connection pool so Jest can exit cleanly
   });
 });
