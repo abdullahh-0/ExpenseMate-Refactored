@@ -1,150 +1,221 @@
-# ExpenseMate — Personal Expense Manager
+# ExpenseMate - Personal Expense Manager (Refactored)
 
-> **University Assignment Project — Software Construction & Development (SCD)**  
-> **Technology Stack**: Node.js, Express.js, React (Vite), PostgreSQL (with Dual In-Memory Fallback)
+Software Construction and Development (SCD) - Assignment 2: Software Evolution (Migration, Refactoring and Rewriting)
 
----
+This repository is the evolved version of the Assignment 1 ExpenseMate application. The behaviour seen by the user is unchanged. The code underneath was migrated, refactored and partly rewritten.
 
-## 🌟 Overview & Highlights
+Team: Areebah Khan and Muhammad Abdullah
 
-**ExpenseMate** is a clean, modern, university-level personal expense management system designed to demonstrate the complete Software Construction lifecycle (**Requirements → Design → Construction → Testing → Maintenance → Evolution**).
+## What Changed in Assignment 2
 
-### Key Features
-1. **Financial Dashboard & Visual Analytics**: Dynamic summary metrics (Total Income, Total Expense, Net Balance) with Chart.js Doughnut (Expense by Category) and Bar (Income vs Expense) charts.
-2. **Rule-Based Keyword Auto-Categorization**: Typing terms like `"Uber"`, `"Grocery"`, `"Salary"`, `"Electricity"` automatically suggests the correct category.
-3. **Monthly Budget Ceiling Controls & Threshold Alerts**: Set monthly budget caps per category with visual color-coded badges:
-   - `<80%`: **Normal** (Green)
-   - `80-89%`: **Warning** (Yellow)
-   - `90-99%`: **Critical** (Orange)
-   - `100%+`: **Exceeded** (Red Alert)
-4. **Excel (`.xlsx`) & CSV Dataset Import**: File preview wizard supporting `ExpenseMate_Dummy_Dataset_180.xlsx`, row-by-row validation table, and safe non-destructive database insertion.
-5. **CSV Ledger Export**: Export all records into standard CSV format with a single click.
-6. **Multi-Currency Support**: Switch between PKR (`Rs.`), USD (`$`), EUR (`€`), GBP (`£`), AED, and SAR across all dashboard displays.
-7. **Dual Database Architecture (PostgreSQL + Automatic Memory Fallback)**: Runs seamlessly on PostgreSQL if active, or automatically falls back to an in-memory repository store if PostgreSQL is offline (guaranteeing zero-dependency viva demo capability!).
+| Part | Change |
+|---|---|
+| A. Migration | `db/schema.sql` became versioned migrations in `db/migrations/`. A runner (`backend/db/migrate.js`) tracks them in a `schema_migrations` table. Migration 002 adds a `payment_method` column. A fingerprint script proves existing data is unchanged. |
+| B. Refactoring | Transactions and budgets now follow Controller, Service, Repository, Database. Dependencies are wired in `backend/container.js`. A test enforces the layer rules. |
+| C. Rewriting | `db/connection.js` was replaced by the classes `Database` and `MemoryDatabase`. The keyword categoriser was replaced by the class `CategoryClassifier`. |
+| Extra feature | "Clear transaction history" button on the Transactions page (`DELETE /api/transactions?confirm=true`). |
 
----
+Results: 6 tests in Assignment 1, 209 tests in 15 suites now; statement coverage 52.05% to 87.32% (measured at Stage E with 192 tests).
 
-## 📁 Repository Structure
+## Git Baseline and Branches
+
+- Tag `a1-baseline`: the unchanged Assignment 1 code.
+- Branch `assignment-2`: all Assignment 2 work.
+- Tags `stageC-done`, `stageD-done`, `stageE-done`, `featureClear-done` mark the end of each stage.
+
+## Technology Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 18, Vite 5, Chart.js |
+| Backend | Node.js, Express 4 |
+| Database | PostgreSQL (via pg), in-memory fallback |
+| Testing | Jest, Supertest |
+
+## Architecture
 
 ```text
-Expense Tracker/
-├── db/                         # Database Storage Layer
-│   ├── schema.sql              # PostgreSQL DDL Table Creation
-│   ├── seed.sql                # Default Categories & Sample Data
-│   └── expensemate.db          # Database file
-├── backend/                    # Express REST API Server Layer
-│   ├── controllers/            # Express Request Controllers
-│   ├── db/connection.js        # PostgreSQL Pool & Memory Store Fallback
-│   ├── routes/                 # Express REST API Endpoints
-│   ├── utils/                  # Categorizer Rule Engine & Validators
-│   ├── tests/api.test.js       # Jest Automated API Unit Tests
-│   ├── uploads/                # Temporary file uploads (Excel/CSV)
-│   ├── server.js               # Backend Express Server Entry Point
-│   ├── package.json            # Node Backend Dependencies
-│   └── .env                    # Environment configuration (Port 5001)
-├── frontend/                   # React (Vite) User Interface Layer
-│   ├── src/
-│   │   ├── components/         # Reusable React UI Components
-│   │   ├── pages/              # Overview, Transactions, Budgets, Analytics, Goals, Settings
-│   │   ├── services/api.js     # API Client Service Wrapper
-│   │   ├── App.jsx             # React App Root
-│   │   └── App.css             # Glassmorphic Design System CSS
-│   ├── index.html
-│   ├── dist/                   # Production build assets (served by backend)
-│   ├── vite.config.js          # Vite configuration with /api proxy to port 5001
-│   └── package.json            # React Frontend Dependencies
-└── ExpenseMate_Dummy_Dataset_180.xlsx # Sample University Dataset File
+Route  >  Controller  >  Service  >  Repository  >  Database (PostgreSQL or in-memory)
 ```
 
----
+- Controllers read the request and write the response. No SQL and no business rules.
+- Services hold validation and business rules.
+- Repositories hold all SQL.
+- `backend/container.js` creates and connects the layers.
+- `backend/tests/architecture.test.js` fails if a layer calls the wrong neighbour.
 
-## 🚀 How to Start the Project from the Terminal
+Not yet refactored: the dashboard, import and category controllers still call the database directly.
 
-### Option A: Production Mode (Single Terminal — Recommended for Viva Demo)
-The backend is configured to directly serve both the **REST API** and the compiled **React frontend** on a single port (`5001`):
+## Project Structure
 
-```powershell
-# Navigate to backend and start
-cd backend
+```text
+ExpenseMate-Refactored/
+|-- db/
+|   |-- migrations/
+|   |   |-- 001_baseline.sql
+|   |   |-- 002_add_payment_method.sql
+|   |   |-- 002_add_payment_method.down.sql
+|   |-- seed.sql
+|-- backend/
+|   |-- controllers/            HTTP adapters
+|   |-- services/               business rules (transaction, budget, category classifier)
+|   |-- repositories/           all SQL
+|   |-- errors/AppError.js      typed errors
+|   |-- db/
+|   |   |-- connection.js       facade
+|   |   |-- Database.js         database class
+|   |   |-- MemoryDatabase.js   in-memory engine
+|   |   |-- config.js           connection settings
+|   |   |-- migrate.js          migration runner
+|   |   |-- fingerprint.js      before/after data check
+|   |-- container.js            composition root
+|   |-- routes/
+|   |-- utils/                  validators and categoriser facade
+|   |-- scripts/
+|   |   |-- metrics.js          maintainability metrics
+|   |   |-- regressionCompare.js  compares Assignment 1 and 2 backends
+|   |-- tests/
+|   |   |-- unit/               unit tests
+|   |   |-- integration/        workflow and clear-history tests
+|   |   |-- regression/         Assignment 1 tests, unchanged
+|   |   |-- api.test.js, migrate.test.js, architecture.test.js
+|   |-- server.js               entry point (port 5001)
+|   |-- .env.example
+|-- frontend/                   React (Vite) interface
+|-- ExpenseMate_Dummy_Dataset_180.xlsx
+```
+
+## Prerequisites
+
+- Node.js 18 or newer and npm
+- PostgreSQL (optional). Without it the application starts in in-memory mode.
+
+## Setup
+
+1. Install the dependencies:
+
+   ```bash
+   cd backend
+   npm install
+   cd ../frontend
+   npm install
+   ```
+
+2. Copy `backend/.env.example` to `backend/.env` and set your PostgreSQL password:
+
+   ```text
+   PORT=5001
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=expensemate_db
+   DB_USER=postgres
+   DB_PASSWORD=your_password
+   DATABASE_URL=postgres://postgres:your_password@localhost:5432/expensemate_db
+   ```
+
+3. Create the database (skip this to use in-memory mode):
+
+   ```sql
+   CREATE DATABASE expensemate_db;
+   ```
+
+   Pending migrations are applied automatically when the server starts.
+
+## Running the Application
+
+### Option A: single server (production build)
+
+```bash
+cd frontend
+npm run build
+cd ../backend
 npm start
 ```
-*Open your browser at **`http://localhost:5001`**.*
 
----
+Open http://localhost:5001
 
-### Option B: Live Developer Mode (Two Terminals with Hot-Reloading)
-For active development with instant code updates:
+### Option B: development mode (two terminals)
 
-1. **Terminal 1 — Start Backend Server**:
-   ```powershell
-   cd backend
-   npm run dev    # or npm start
-   ```
-   *Backend listens on `http://localhost:5001`.*
-
-2. **Terminal 2 — Start Frontend Vite Dev Server**:
-   ```powershell
-   cd frontend
-   npm run dev
-   ```
-   *Open browser at **`http://localhost:3000`** (requests to `/api` are automatically proxied to port 5001).*
-
----
-
-## 🧪 Running Automated Unit Tests
-
-To run the backend Jest API integration tests:
+Terminal 1:
 
 ```bash
 cd backend
-npm test
+npm run dev
 ```
 
-**Expected Test Output**:
-```text
-PASS tests/api.test.js
-  ExpenseMate API Test Suite
-    √ GET /api/categories - Should return list of default categories
-    √ POST /api/transactions/suggest-category - Should suggest Transport for "Uber ride"
-    √ POST /api/transactions - Should create a new transaction
-    √ GET /api/transactions - Should retrieve transactions
-    √ POST /api/budgets & GET /api/budgets - Should set and calculate budget status
-    √ GET /api/dashboard - Should return complete financial metrics
+Terminal 2:
 
-Test Suites: 1 passed, 1 total
-Tests:       6 passed, 6 total
-Snapshots:   0 total
-Time:        1.116 s
+```bash
+cd frontend
+npm run dev
 ```
 
----
+Open http://localhost:3000
 
-## 🎓 Viva Q&A Guide for Academic Evaluation
+## Database Migrations
 
-### Q1: What architecture does ExpenseMate follow?
-> **Answer**: ExpenseMate uses a 3-Tier Layered Architecture consisting of a React Vite single-page application (Frontend Layer), Express.js REST API router/controllers (Backend Layer), and PostgreSQL database with an automatic in-memory fallback repository (DB Data Storage Layer).
+Run these from the `backend` folder:
 
-### Q2: How does the auto-categorization feature work?
-> **Answer**: It utilizes a rule-based engine (`backend/utils/categorizer.js`) that performs case-insensitive keyword matching on transaction descriptions. When typing terms like "Uber", "Metro", or "Salary", it maps the keyword to categories like "Transport", "Food", or "Salary" and allows manual user override.
+```bash
+npm run migrate            # apply pending migrations
+npm run migrate:status     # show applied and pending migrations
+npm run migrate:down       # roll back the most recent migration
+npm run db:fingerprint     # row counts, totals and content hash per table
+```
 
-### Q3: How are budget warning thresholds calculated?
-> **Answer**: The backend calculates spending percentage: `(actual_spent / amount_limit) * 100`.
-> - `< 80%`: Normal
-> - `80-89%`: Warning
-> - `90-99%`: Critical
-> - `≥ 100%`: Exceeded (Red Alert)
+To check that a migration keeps existing data intact, run `npm run db:fingerprint` before and after `npm run migrate` and compare the two outputs.
 
-### Q4: How does the system handle database dependency failures?
-> **Answer**: `backend/db/connection.js` attempts a connection via PostgreSQL `pg.Pool`. If PostgreSQL is not installed or offline, it catches the connection error and automatically redirects query requests to an internal mock memory store without throwing errors or crashing.
+## Running the Tests
 
----
+From the `backend` folder:
 
-## 📄 Academic Documentation Bundle
-The complete academic submission documents for this assignment are located in the submission root folder:
-- `SRS_Document.docx` (Software Requirements Specification)
-- `Architecture_Document.docx` (High-Level Design & ERD)
-- `Test_Cases.docx` (System & Integration Test Suite)
-- `Metrics Report.docx` (Quality & Software Metrics)
-- `Final_Report.docx` (Complete Project Lifecycle Report)
+```bash
+npm test                   # all suites
+npm run test:coverage      # with coverage summary
+```
 
-> Assignment 2 refactor in progress
+Expected result: 15 suites, 209 tests, all passing. Two integration workflows that need PostgreSQL do nothing when the application runs in in-memory mode.
+
+## Regression Comparison and Metrics
+
+```bash
+npm run metrics
+npm run regression:compare -- <path to Assignment 1 backend> --edge
+```
+
+- `metrics` prints lines of code, functions, cyclomatic complexity and dependency-separation indicators.
+- `regression:compare` starts the Assignment 1 backend and this backend on two fresh databases (`expensemate_cmp_a1` and `expensemate_cmp_a2`, created and dropped by the script), sends both the same requests and compares the responses. It needs PostgreSQL.
+
+## API Endpoints
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | /api/categories | list categories |
+| GET | /api/transactions | list transactions (search and filter options) |
+| POST | /api/transactions | create a transaction (includes payment_method) |
+| PUT | /api/transactions/:id | update a transaction |
+| DELETE | /api/transactions/:id | delete one transaction |
+| DELETE | /api/transactions?confirm=true | clear the whole transaction history |
+| POST | /api/transactions/suggest-category | suggest a category from a description |
+| GET | /api/budgets | budget summary with status |
+| POST | /api/budgets | create or update a budget |
+| DELETE | /api/budgets/:id | delete a budget |
+| GET | /api/dashboard | dashboard totals and breakdowns |
+| POST | /api/import/preview | upload and validate a spreadsheet |
+| POST | /api/import/confirm | save the validated rows |
+| GET | /api/export/csv | download all records as CSV |
+
+Valid payment methods: Cash, Debit Card, Credit Card, Bank Transfer, Mobile Wallet.
+
+Clear transaction history: the call is rejected unless `confirm=true` is sent. Budgets are kept and their spending resets to zero.
+
+## Known Limitations
+
+- The dashboard, import and category controllers still contain SQL (the import function has cyclomatic complexity 38).
+- In in-memory mode the dashboard shows zeros.
+- A category id that does not exist returns a generic 500 error instead of 400.
+- Clearing history deletes transactions in every currency.
+
+## Documentation
+
+The Assignment 2 documents are submitted alongside the source: Migration Report, Refactoring Report, Rewriting Report, Test Package, Maintainability Comparison and Change Log, and Final Report.
