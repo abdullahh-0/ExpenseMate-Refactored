@@ -86,6 +86,12 @@ class TransactionRepository {
     const result = await this.db.query('DELETE FROM transactions WHERE id = $1', [id]);
     return result.rowCount > 0;
   }
+
+  /** Removes every transaction (all currencies). Returns how many rows were removed. */
+  async deleteAll() {
+    const result = await this.db.query('DELETE FROM transactions');
+    return result.rowCount;
+  }
 }
 
 module.exports = TransactionRepository;

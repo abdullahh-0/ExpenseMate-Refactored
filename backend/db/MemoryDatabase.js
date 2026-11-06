@@ -153,6 +153,16 @@ const HANDLERS = [
     }
   },
   {
+    // "DELETE FROM transactions" with no WHERE clause: used by "clear transaction history"
+    name: 'transaction.deleteAll',
+    test: /^DELETE FROM TRANSACTIONS\s*;?$/,
+    run(state) {
+      const removed = state.transactions.length;
+      state.transactions = [];
+      return { rows: [], rowCount: removed };
+    }
+  },
+  {
     name: 'transaction.delete',
     test: /^DELETE FROM TRANSACTIONS\b/,
     run(state, params) {

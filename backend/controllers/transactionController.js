@@ -70,6 +70,16 @@ function createTransactionController(service) {
     }
   };
 
+  // DELETE /api/transactions?confirm=true  (clears the whole history)
+  const clearTransactions = async (req, res) => {
+    try {
+      const { deleted } = await service.clearAll({ confirmed: req.query.confirm === 'true' });
+      return res.json({ success: true, message: 'Transaction history cleared.', deleted });
+    } catch (err) {
+      return sendError(res, err, 'Unable to clear transaction history.');
+    }
+  };
+
   // POST /api/transactions/suggest-category
   const autoCategorize = async (req, res) => {
     try {
@@ -80,7 +90,7 @@ function createTransactionController(service) {
     }
   };
 
-  return { getTransactions, createTransaction, updateTransaction, deleteTransaction, autoCategorize };
+  return { getTransactions, createTransaction, updateTransaction, deleteTransaction, clearTransactions, autoCategorize };
 }
 
 const handlers = createTransactionController(require('../container').transactionService);
