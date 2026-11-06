@@ -10,7 +10,8 @@
     "migrate": "node db/migrate.js up",
     "migrate:status": "node db/migrate.js status",
     "migrate:down": "node db/migrate.js down",
-    "db:fingerprint": "node db/fingerprint.js"
+    "db:fingerprint": "node db/fingerprint.js",
+    "regression:compare": "node scripts/regressionCompare.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
