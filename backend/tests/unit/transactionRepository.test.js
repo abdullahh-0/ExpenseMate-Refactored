@@ -54,6 +54,14 @@ describe('TransactionRepository writes', () => {
     expect(row).toBeNull();
   });
 
+  test('deleteAll issues one unfiltered DELETE and returns the number of removed rows', async () => {
+    const db = makeFakeDb(() => ({ rowCount: 42 }));
+    expect(await new TransactionRepository(db).deleteAll()).toBe(42);
+    expect(db.calls).toHaveLength(1);
+    expect(db.calls[0].sql).toBe('DELETE FROM transactions');
+    expect(db.calls[0].params).toEqual([]);
+  });
+
   test('delete reports whether a row was removed', async () => {
     expect(await new TransactionRepository(makeFakeDb(() => ({ rowCount: 1 }))).delete(1)).toBe(true);
     expect(await new TransactionRepository(makeFakeDb(() => ({ rowCount: 0 }))).delete(1)).toBe(false);

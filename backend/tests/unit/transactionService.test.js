@@ -7,6 +7,7 @@ function build({ suggest = 'Other', existingCategory = null, repoOverrides = {} 
     create: jest.fn(async (tx) => ({ id: 1, ...tx })),
     update: jest.fn(async (id, tx) => ({ id, ...tx })),
     delete: jest.fn(async () => true),
+    deleteAll: jest.fn(async () => 5),
     ...repoOverrides
   };
   const categoryRepo = {
@@ -153,5 +154,27 @@ describe('TransactionService.suggestCategory', () => {
     const { service } = build({ suggest: 'Other', existingCategory: null });
     const result = await service.suggestCategory('qqq');
     expect(result).toEqual({ suggestedCategory: 'Other', category: { id: null, name: 'Other', type: 'expense' } });
+  });
+});
+
+describe('TransactionService.clearAll', () => {
+  test('refuses to run unless explicitly confirmed, and never touches the repository', async () => {
+    const { service, transactionRepo } = build();
+    await expect(service.clearAll()).rejects.toThrow(ValidationError);
+    await expect(service.clearAll({})).rejects.toThrow(ValidationError);
+    await expect(service.clearAll({ confirmed: false })).rejects.toThrow(ValidationError);
+    await expect(service.clearAll({ confirmed: 'true' })).rejects.toThrow(/confirmed explicitly/);
+    expect(transactionRepo.deleteAll).not.toHaveBeenCalled();
+  });
+
+  test('when confirmed, clears the history once and reports how many rows were removed', async () => {
+    const { service, transactionRepo } = build();
+    expect(await service.clearAll({ confirmed: true })).toEqual({ deleted: 5 });
+    expect(transactionRepo.deleteAll).toHaveBeenCalledTimes(1);
+  });
+
+  test('clearing an already empty history is not an error', async () => {
+    const { service } = build({ repoOverrides: { deleteAll: jest.fn(async () => 0) } });
+    expect(await service.clearAll({ confirmed: true })).toEqual({ deleted: 0 });
   });
 });

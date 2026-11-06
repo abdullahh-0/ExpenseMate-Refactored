@@ -152,3 +152,22 @@ describe('MemoryDatabase: general behaviour', () => {
     ]));
   });
 });
+
+describe('MemoryDatabase: clearing transactions', () => {
+  test('DELETE FROM transactions without WHERE removes every row and reports the count', () => {
+    const memory = fresh();
+    const total = memory.query('SELECT t.*, c.name AS category_name, c.type AS category_type FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE 1=1 ORDER BY t.date DESC, t.id DESC').rows.length;
+    expect(total).toBeGreaterThan(0);
+    expect(memory.query('DELETE FROM transactions')).toEqual({ rows: [], rowCount: total });
+    expect(memory.state.transactions).toEqual([]);
+    expect(memory.unsupported).toEqual([]);
+  });
+
+  test('DELETE FROM transactions WHERE id = $1 still removes only that row', () => {
+    const memory = fresh();
+    const before = memory.state.transactions.length;
+    const id = memory.state.transactions[0].id;
+    expect(memory.query('DELETE FROM transactions WHERE id = $1', [id]).rowCount).toBe(1);
+    expect(memory.state.transactions.length).toBe(before - 1);
+  });
+});

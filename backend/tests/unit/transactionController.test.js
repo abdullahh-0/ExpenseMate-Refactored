@@ -8,6 +8,7 @@ function build(serviceOverrides = {}) {
     create: jest.fn(async (input) => ({ id: 10, ...input })),
     update: jest.fn(async (id) => ({ id })),
     remove: jest.fn(async () => undefined),
+    clearAll: jest.fn(async () => ({ deleted: 3 })),
     suggestCategory: jest.fn(async () => ({ suggestedCategory: 'Food', category: { id: 1, name: 'Food', type: 'expense' } })),
     ...serviceOverrides
   };
@@ -86,5 +87,40 @@ describe('transaction controller', () => {
     const res = makeRes();
     await controller.autoCategorize({ body: { description: 'lunch' } }, res);
     expect(res.body).toEqual({ success: true, suggestedCategory: 'Food', category: { id: 1, name: 'Food', type: 'expense' } });
+  });
+});
+
+describe('transaction controller: clear history', () => {
+  test('?confirm=true is passed to the service as confirmed and the count is returned', async () => {
+    const { service, controller } = build();
+    const res = makeRes();
+    await controller.clearTransactions({ query: { confirm: 'true' } }, res);
+    expect(service.clearAll).toHaveBeenCalledWith({ confirmed: true });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ success: true, message: 'Transaction history cleared.', deleted: 3 });
+  });
+
+  test('a missing or different confirm value is passed as not confirmed', async () => {
+    const { service, controller } = build();
+    await controller.clearTransactions({ query: {} }, makeRes());
+    await controller.clearTransactions({ query: { confirm: 'yes' } }, makeRes());
+    expect(service.clearAll).toHaveBeenNthCalledWith(1, { confirmed: false });
+    expect(service.clearAll).toHaveBeenNthCalledWith(2, { confirmed: false });
+  });
+
+  test('an unconfirmed request is rejected with 400', async () => {
+    const { controller } = build({ clearAll: jest.fn(async () => { throw new ValidationError('Clearing the transaction history must be confirmed explicitly.'); }) });
+    const res = makeRes();
+    await controller.clearTransactions({ query: {} }, res);
+    expect(res.statusCode).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
+
+  test('an unexpected failure becomes a generic 500', async () => {
+    const { controller } = build({ clearAll: jest.fn(async () => { throw new Error('db down'); }) });
+    const res = makeRes();
+    await controller.clearTransactions({ query: { confirm: 'true' } }, res);
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({ success: false, message: 'Unable to clear transaction history.' });
   });
 });
