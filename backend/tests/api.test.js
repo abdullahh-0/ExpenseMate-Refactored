@@ -26,6 +26,14 @@ describe('ExpenseMate API Test Suite', () => {
     expect(res.body.suggestedCategory).toEqual('Transport');
   });
 
+  test('POST /api/transactions/suggest-category - Should not be fooled by words that merely contain a keyword', async () => {
+    const concert = await request(app).post('/api/transactions/suggest-category').send({ description: 'Concert tickets' });
+    expect(concert.body.suggestedCategory).toEqual('Entertainment'); // "concert" contains "cert" (Education)
+
+    const revenue = await request(app).post('/api/transactions/suggest-category').send({ description: 'Business revenue' });
+    expect(revenue.body.suggestedCategory).toEqual('Business'); // "business" contains "bus" (Transport)
+  });
+
   test('POST /api/transactions - Should create a new transaction', async () => {
     const newTx = {
       amount: 1500,
