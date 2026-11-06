@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
+const { runPending } = require('./migrate');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -143,6 +144,7 @@ function executeMockQuery(sql, params) {
       type: params[3],
       category_id: parseInt(params[4]),
       currency: params[5] || 'PKR',
+      payment_method: params[6] || 'Cash',
       created_at: new Date()
     };
     memoryStore.transactions.push(newTx);
@@ -161,7 +163,8 @@ function executeMockQuery(sql, params) {
         amount: parseFloat(params[2]),
         type: params[3],
         category_id: parseInt(params[4]),
-        currency: params[5]
+        currency: params[5],
+        payment_method: params[6] || memoryStore.transactions[idx].payment_method || 'Cash'
       };
       return { rows: [memoryStore.transactions[idx]], rowCount: 1 };
     }
@@ -216,17 +219,13 @@ const initDb = async () => {
     try {
       await pool.query('SELECT 1');
 
-      const schemaSqlPath = fs.existsSync(path.join(__dirname, '../../db/schema.sql'))
-        ? path.join(__dirname, '../../db/schema.sql')
-        : path.join(__dirname, '../db/schema.sql');
+      // Bring the schema up to date using versioned migrations (see db/migrations)
+      await runPending(pool);
+
       const seedSqlPath = fs.existsSync(path.join(__dirname, '../../db/seed.sql'))
         ? path.join(__dirname, '../../db/seed.sql')
         : path.join(__dirname, '../db/seed.sql');
 
-      if (fs.existsSync(schemaSqlPath)) {
-        const schemaSql = fs.readFileSync(schemaSqlPath, 'utf-8');
-        await pool.query(schemaSql);
-      }
       if (fs.existsSync(seedSqlPath)) {
         const countRes = await pool.query('SELECT COUNT(*) FROM categories');
         if (parseInt(countRes.rows[0].count) === 0) {

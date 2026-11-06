@@ -6,7 +6,11 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "jest --forceExit"
+    "test": "jest --forceExit",
+    "migrate": "node db/migrate.js up",
+    "migrate:status": "node db/migrate.js status",
+    "migrate:down": "node db/migrate.js down",
+    "db:fingerprint": "node db/fingerprint.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
