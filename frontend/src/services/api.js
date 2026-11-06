@@ -41,6 +41,16 @@ export const api = {
     return res.json();
   },
 
+  // Removes EVERY transaction (all currencies). The server requires confirm=true.
+  async clearTransactions() {
+    const res = await fetch(`${API_BASE}/transactions?confirm=true`, { method: 'DELETE' });
+    const json = await res.json();
+    if (!res.ok || json.success === false) {
+      throw new Error(json.message || 'Failed to clear transaction history.');
+    }
+    return json;
+  },
+
   async suggestCategory(description) {
     const res = await fetch(`${API_BASE}/transactions/suggest-category`, {
       method: 'POST',
