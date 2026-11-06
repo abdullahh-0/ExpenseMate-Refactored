@@ -103,7 +103,6 @@ export default function App() {
             categories={categories}
             currency={currency}
             onRefresh={() => loadAllData(selectedMonth, selectedYear)}
-            onAddExpense={() => setModalOpen(true)}
             onEditTransaction={(tx) => setEditingTransaction(tx)}
           />
         )}

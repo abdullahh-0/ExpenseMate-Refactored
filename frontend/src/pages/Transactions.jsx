@@ -21,7 +21,6 @@ export default function Transactions({
   categories = [],
   currency = 'PKR',
   onRefresh,
-  onAddExpense,
   onEditTransaction
 }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -77,6 +76,21 @@ export default function Transactions({
     }
   };
 
+  const handleClearHistory = async () => {
+    const message =
+      'This will permanently delete ALL transactions in every currency.\n' +
+      'Budgets are kept, but their spending will reset to zero.\n\n' +
+      'This cannot be undone. Clear the transaction history?';
+    if (!window.confirm(message)) return;
+    try {
+      const result = await api.clearTransactions();
+      alert(`Transaction history cleared (${result.deleted} removed).`);
+      onRefresh && onRefresh();
+    } catch (err) {
+      alert('Failed to clear transaction history: ' + err.message);
+    }
+  };
+
   return (
     <div className="content">
       {/* Header Row */}
@@ -91,8 +105,14 @@ export default function Transactions({
           <p>Search, filter, edit, or record all income and expenses ({filtered.length} entries).</p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="primary-button" onClick={onAddExpense}>
-            <Icon name="plus" size={18} /> Add transaction
+          <button
+            className="secondary-button"
+            style={{ color: 'var(--coral-ink)', borderColor: 'var(--coral-ink)' }}
+            onClick={handleClearHistory}
+            disabled={transactions.length === 0}
+            title={transactions.length === 0 ? 'There are no transactions to clear' : 'Delete all transactions'}
+          >
+            <Icon name="trash" size={16} /> Clear transaction history
           </button>
         </div>
       </section>

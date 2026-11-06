@@ -78,6 +78,19 @@ class TransactionService {
     if (!deleted) throw new NotFoundError('Transaction record not found.');
   }
 
+  /**
+   * Clears the whole transaction history. Destructive, so the caller must confirm explicitly.
+   * Budgets are left untouched; their "spent" figures are derived from transactions and drop to zero.
+   * @returns {Promise<{deleted:number}>}
+   */
+  async clearAll({ confirmed } = {}) {
+    if (confirmed !== true) {
+      throw new ValidationError('Clearing the transaction history must be confirmed explicitly.');
+    }
+    const deleted = await this.transactionRepo.deleteAll();
+    return { deleted };
+  }
+
   /** Suggests a category for a description; falls back to an unsaved expense category. */
   async suggestCategory(description) {
     const suggestedName = this.categorizer.suggestCategory(description);
